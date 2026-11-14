@@ -1,166 +1,67 @@
-
+"""NVIDIA analytics dashboard. Run with: streamlit run app.py."""
 import streamlit as st
-import pandas as pd
-import plotly.express as px
-from pathlib import Path
 
-st.set_page_config(
-    page_title="NVIDIA Stock Predictor",
-    page_icon="📈",
-    layout="wide"
-)
+from src.dashboard_data import (DataError, FEATURES_PATH, RAW_PATH,
+                                check_feature_prices, load_dataset)
+from src.dashboard_pages import insights, market_analysis, overview, predictions
+from src.dashboard_ui import apply_style
 
-st.title("NVIDIA Stock Price Prediction")
-st.caption("Linear Regression Machine Learning Project")
+PAGES = ["Overview", "Market Analysis", "ML Predictions", "Model Insights"]
 
-DATA_PATH = Path("data/raw/nvda.csv")
 
-if not DATA_PATH.exists():
-    st.error(
-        "Dataset not found. Run "
-        "'python src/download_data.py' first."
-    )
-    st.stop()
+def main():
+    st.set_page_config(page_title="NVIDIA Stock Predictor", page_icon="📈", layout="wide")
+    apply_style()
+    with st.sidebar:
+        st.markdown("## NVIDIA<span style='color:#76B900'> / </span>NVDA", unsafe_allow_html=True)
+        st.caption("STOCK PREDICTOR")
+        st.divider()
+        page = st.radio("Workspace", PAGES, label_visibility="collapsed")
+        st.divider()
+        st.caption("HISTORICAL ANALYTICS")
 
-# Load the saved data
-df = pd.read_csv(
-    DATA_PATH,
-    parse_dates=["Date"]
-)
+    # Placeholder pages remain available even if local data files are missing.
+    if page == "ML Predictions":
+        predictions()
+        return
+    if page == "Model Insights":
+        insights()
+        return
 
-df = df.sort_values("Date")
+    try:
+        raw = load_dataset(RAW_PATH)
+    except DataError as exc:
+        st.error(str(exc))
+        st.info("Download the historical CSV with: venv/bin/python src/data.py")
+        return
+    with st.sidebar:
+        st.caption(f"Latest trading date: {raw['Date'].max():%d %b %Y}")
+        chosen = st.date_input("Historical date range",
+                               value=(raw['Date'].min().date(), raw['Date'].max().date()),
+                               min_value=raw['Date'].min().date(), max_value=raw['Date'].max().date(),
+                               key="historical_dates")
+        st.caption("Adjusted prices · USD\n\nHistorical snapshot, not live quotes.")
+        st.caption("Source: local Yahoo Finance CSV. Close is adjusted by the existing auto_adjust=True downloader; explicit Adj Close takes priority when present.")
+    if len(chosen) != 2:
+        st.info("Select both a start date and an end date to view historical analytics.")
+        return
+    if chosen[0] > chosen[1]:
+        st.warning("The start date must be on or before the end date.")
+        return
+    if page == "Overview":
+        overview(raw, chosen)
+    else:
+        try:
+            features = load_dataset(FEATURES_PATH, processed=True)
+            check_feature_prices(raw, features)
+        except DataError as exc:
+            st.error(str(exc))
+            st.info("Check the processed CSV. To rebuild it when needed: venv/bin/python src/features.py")
+            return
+        if features['Date'].max() != raw['Date'].max():
+            st.warning("Raw and processed datasets have different latest trading dates. Analysis uses the saved processed snapshot.")
+        market_analysis(features, chosen)
 
-# Dashboard metrics
-latest_price = df["Close"].iloc[-1]
-previous_price = df["Close"].iloc[-2]
 
-change = (
-    (latest_price - previous_price)
-    / previous_price
-) * 100
-
-col1, col2, col3 = st.columns(3)
-
-col1.metric(
-    "Latest Closing Price",
-    f"${latest_price:.2f}",
-    f"{change:.2f}%"
-)
-
-col2.metric(
-    "Highest Adjusted Close",
-    f"${df['Close'].max():.2f}"
-)
-
-col3.metric(
-    "Trading Days",
-    f"{len(df):,}"
-)
-
-# Historical price chart
-st.subheader("NVIDIA Historical Stock Price")
-
-fig = px.line(
-    df,
-    x="Date",
-    y="Close",
-    title="NVDA Adjusted Closing Price"
-)
-
-fig.update_layout(
-    xaxis_title="Date",
-    yaxis_title="Price (USD)",
-    hovermode="x unified"
-)
-
-st.plotly_chart(fig, use_container_width=True)
-
-# Volume chart
-st.subheader("Trading Volume")
-
-volume_fig = px.bar(
-    df,
-    x="Date",
-    y="Volume",
-    title="NVDA Daily Trading Volume"
-)
-
-st.plotly_chart(
-    volume_fig,
-    use_container_width=True
-)
-
-# Dataset preview
-st.subheader("Historical Dataset")
-
-st.dataframe(
-    df.tail(20),
-    use_container_width=True
-)
-
-# ====================================
-# STEP 3: EXPLORATORY DATA ANALYSIS
-# ====================================
-
-st.divider()
-st.header("Exploratory Data Analysis")
-
-FEATURES_PATH = Path("data/processed/nvda_features.csv")
-
-if FEATURES_PATH.exists():
-
-    features_df = pd.read_csv(
-        FEATURES_PATH,
-        parse_dates=["Date"]
-    )
-
-    # Moving averages
-    st.subheader("NVIDIA Moving Averages")
-
-    fig_ma = px.line(
-        features_df,
-        x="Date",
-        y=["Close", "MA_5", "MA_20"],
-        title="NVIDIA Price vs Moving Averages"
-    )
-
-    st.plotly_chart(
-        fig_ma,
-        use_container_width=True
-    )
-
-    # Daily returns
-    st.subheader("Daily Stock Returns")
-
-    fig_returns = px.line(
-        features_df,
-        x="Date",
-        y="Daily_Return",
-        title="NVIDIA Daily Returns"
-    )
-
-    st.plotly_chart(
-        fig_returns,
-        use_container_width=True
-    )
-
-    # Volatility
-    st.subheader("10-Day Rolling Volatility")
-
-    fig_vol = px.line(
-        features_df,
-        x="Date",
-        y="Volatility_10",
-        title="NVIDIA Historical Volatility"
-    )
-
-    st.plotly_chart(
-        fig_vol,
-        use_container_width=True
-    )
-
-else:
-    st.warning(
-        "Processed data not found. "
-        "Run python src/features.py first."
-    )
+if __name__ == "__main__":
+    main()

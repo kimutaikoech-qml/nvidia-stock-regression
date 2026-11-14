@@ -1,0 +1,30 @@
+<style>
+:root { color-scheme: dark; }
+.stApp { background: #0E1117; }
+[data-testid="stSidebar"] { background: #161B22; border-right: 1px solid #27313B; }
+.block-container { max-width: 1480px; padding-top: 2.5rem; padding-bottom: 3rem; }
+h1 { font-weight: 750 !important; letter-spacing: -0.045em; }
+h2, h3 { letter-spacing: -0.025em; }
+[data-testid="stCaptionContainer"] { color: #99A7B9; letter-spacing: .06em; }
+[data-testid="stMetric"] {
+  background: linear-gradient(135deg, #19212B, #161B22);
+  border: 1px solid #2A3441; border-radius: 16px;
+  padding: 20px 22px; min-height: 135px;
+  transition: border-color .18s ease, transform .18s ease;
+}
+[data-testid="stMetric"]:hover { border-color: #76B900; transform: translateY(-2px); }
+[data-testid="stMetricLabel"] { color: #AAB6C5; }
+[data-testid="stMetricValue"] { font-weight: 700; letter-spacing: -.04em; }
+[data-testid="stVerticalBlockBorderWrapper"] { border-radius: 16px; }
+[data-testid="stDataFrame"] { border-radius: 12px; overflow: hidden; }
+[data-testid="stSidebar"] [role="radiogroup"] { gap: .6rem; }
+[data-testid="stSidebar"] [role="radiogroup"] label {
+  padding: .65rem .8rem; border-radius: 10px; transition: background .18s;
+}
+[data-testid="stSidebar"] [role="radiogroup"] label:hover { background: #222D38; }
+@media (max-width: 700px) {
+  .block-container { padding: 1.2rem 1rem; }
+  [data-testid="stMetric"] { min-height: 110px; padding: 15px; }
+  h1 { font-size: 2rem !important; }
+}
+</style>
