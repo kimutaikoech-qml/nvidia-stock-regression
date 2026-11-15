@@ -71,7 +71,7 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(app.metric[3].value, f"{len(raw):,}")
         self.assertEqual(len(app.dataframe[0].value), min(20, len(raw)))
         for page, count in [('Overview', 2), ('Market Analysis', 4),
-                            ('ML Predictions', 1), ('Model Insights', 0)]:
+                            ('ML Predictions', 1), ('Model Insights', 4)]:
             app.sidebar.radio[0].set_value(page).run()
             self.assert_clean(app)
             charts = app.get('plotly_chart')
@@ -79,7 +79,7 @@ class DashboardTests(unittest.TestCase):
             for chart in charts:
                 self.assertTrue(chart.proto.spec)
             if page == 'ML Predictions':
-                self.assertTrue(all(m.value == '—' for m in app.metric))
+                self.assertTrue(all(m.value != '—' for m in app.metric))
 
     def test_dates_update_table_and_charts(self):
         app = self.app()
@@ -103,7 +103,7 @@ class DashboardTests(unittest.TestCase):
         self.assertFalse(app.get('plotly_chart'))
         self.assertTrue(app.info)
 
-    def test_missing_data_graceful_and_placeholders_accessible(self):
+    def test_missing_raw_data_graceful_and_model_pages_accessible(self):
         with patch('src.dashboard_data.load_dataset', side_effect=DataError('Missing CSV')):
             app = self.app()
             self.assertFalse(app.exception)

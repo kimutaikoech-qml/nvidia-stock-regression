@@ -3,7 +3,8 @@ import streamlit as st
 
 from src.dashboard_data import (DataError, FEATURES_PATH, RAW_PATH,
                                 check_feature_prices, load_dataset)
-from src.dashboard_pages import insights, market_analysis, overview, predictions
+from src.dashboard_pages import market_analysis, overview
+from src.model_pages import insights, predictions
 from src.dashboard_ui import apply_style
 
 PAGES = ["Overview", "Market Analysis", "ML Predictions", "Model Insights"]
@@ -20,7 +21,7 @@ def main():
         st.divider()
         st.caption("HISTORICAL ANALYTICS")
 
-    # Placeholder pages remain available even if local data files are missing.
+    # Model pages validate their own artifacts independently of the raw CSV.
     if page == "ML Predictions":
         predictions()
         return

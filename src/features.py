@@ -2,8 +2,9 @@
 import pandas as pd
 from pathlib import Path
 
-DATA_PATH = Path("data/raw/nvda.csv")
-OUTPUT_PATH = Path("data/processed/nvda_features.csv")
+ROOT = Path(__file__).resolve().parents[1]
+DATA_PATH = ROOT / "data/raw/nvda.csv"
+OUTPUT_PATH = ROOT / "data/processed/nvda_features.csv"
 
 
 def create_features():

@@ -3,6 +3,8 @@ import yfinance as yf
 import pandas as pd
 from pathlib import Path
 
+OUTPUT_PATH = Path(__file__).resolve().parents[1] / "data/raw/nvda.csv"
+
 def download_nvda_data():
     # Download NVIDIA historical prices
     df = yf.download(
@@ -13,7 +15,7 @@ def download_nvda_data():
         progress=False
     )
 
-    if df.empty:
+    if df is None or df.empty:
         raise ValueError("No NVIDIA data downloaded")
 
     # Ensure chronological ordering
@@ -24,7 +26,7 @@ def download_nvda_data():
         raise ValueError("Duplicate dates detected")
 
     # Save dataset
-    output = Path("data/raw/nvda.csv")
+    output = OUTPUT_PATH
     output.parent.mkdir(
         parents=True,
         exist_ok=True

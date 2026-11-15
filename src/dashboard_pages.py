@@ -4,7 +4,7 @@ import plotly.express as px
 import streamlit as st
 
 from src.dashboard_data import filter_dates, price_column
-from src.dashboard_ui import COLORS, chart, empty_prediction_chart, header, pending
+from src.dashboard_ui import COLORS, chart, header
 
 
 def overview(raw, dates):
@@ -78,33 +78,3 @@ def market_analysis(features, dates):
                        "Daily Return (%)", "10-day Volatility (%)"]
     st.dataframe(summary.describe().round(3), width="stretch")
     st.caption("Volatility is the sample standard deviation of 10 daily returns; it is not annualized.")
-
-
-def predictions():
-    header("NVDA / Prediction workspace", "ML Predictions",
-           "A dedicated workspace for the next development phase.")
-    with st.container(border=True):
-        st.subheader("Multiple Linear Regression")
-        st.markdown("🟢 **Workspace ready** · **Model status: Not Trained**")
-        st.write("Model training will be implemented in the next development phase. "
-                 "No predictions or evaluation scores have been generated.")
-    cols = st.columns(3)
-    for col, label in zip(cols, ["MAE · USD", "RMSE · USD", "R²"]):
-        col.metric(label, "—", help="Available after training and evaluation on held-out data.")
-    st.subheader("Predicted vs actual prices")
-    empty_prediction_chart()
-    pending("Next-trading-day prediction", "Awaiting a trained model. A forecast date and adjusted closing-price estimate will appear here.")
-
-
-def insights():
-    header("NVDA / Model transparency", "Model Insights",
-           "Understand the model’s behavior once training and evaluation are complete.")
-    st.info("Model status: Not Trained. These panels become available after training.")
-    left, right = st.columns(2)
-    with left:
-        pending("Feature coefficients", "Signed regression coefficients will describe each feature’s relationship to the predicted price.")
-        pending("Prediction residuals", "Residual plots will compare prediction errors across time and fitted prices.")
-        pending("Baseline comparison", "Held-out results will be compared with a previous-close baseline.")
-    with right:
-        pending("Feature importance interpretation", "Interpret coefficient direction and magnitude with feature scales and correlations in view.")
-        pending("Model evaluation details", "Review chronological train/test periods, MAE, RMSE, R², and evaluation methodology.")
