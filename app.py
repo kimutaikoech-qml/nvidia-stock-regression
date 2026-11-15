@@ -5,7 +5,7 @@ from src.dashboard_data import (DataError, FEATURES_PATH, RAW_PATH,
                                 check_feature_prices, load_dataset)
 from src.dashboard_pages import market_analysis, overview
 from src.model_pages import insights, predictions
-from src.dashboard_ui import apply_style
+from src.dashboard_ui import apply_style, sidebar_logo
 
 PAGES = ["Overview", "Market Analysis", "ML Predictions", "Model Insights"]
 
@@ -14,8 +14,8 @@ def main():
     st.set_page_config(page_title="NVIDIA Stock Predictor", page_icon="📈", layout="wide")
     apply_style()
     with st.sidebar:
-        st.markdown("## NVIDIA<span style='color:#76B900'> / </span>NVDA", unsafe_allow_html=True)
-        st.caption("STOCK PREDICTOR")
+        sidebar_logo()
+        st.caption("NVDA · STOCK PREDICTOR")
         st.divider()
         page = st.radio("Workspace", PAGES, label_visibility="collapsed")
         st.divider()

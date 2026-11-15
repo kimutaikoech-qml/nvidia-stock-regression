@@ -9,7 +9,7 @@ from src.dashboard_ui import COLORS, chart, header
 
 def overview(raw, dates):
     header("NVDA / Historical market overview", "NVIDIA Stock Predictor",
-           "Explore adjusted prices, trading activity, and the history behind the next model.")
+           "Explore adjusted prices, trading activity, and the history behind the next model.", logo=True)
     latest = raw.iloc[-1]
     price = price_column(raw)
     delta = None if len(raw) < 2 else f"{(latest[price] / raw[price].iloc[-2] - 1):+.2%}"

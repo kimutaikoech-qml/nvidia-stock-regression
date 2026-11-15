@@ -116,13 +116,16 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(metrics['Model RMSE · USD'], f"${b['metrics']['model_rmse']:.4f}")
         self.assertEqual(metrics['Model R²'], f"{b['metrics']['model_r2']:.4f}")
         forecast = forecast_next_session(b['model'], b['features'])
+        next(button for button in app.button if button.label == 'Generate Prediction').click().run()
+        self.assertFalse(app.exception)
+        metrics = {m.label: m.value for m in app.metric}
         self.assertEqual(metrics['Estimated next-session close'], f"${forecast['predicted_close']:,.2f}")
         self.assertTrue(any('previously inspected' in i.value and 'similarly' in i.value
                             and 'previous-close baseline' in i.value for i in app.info))
         self.assertFalse(app.success)  # Trained status is a small caption.
         self.assertFalse(any('StandardScaler' in c.value or 'verified' in c.value for c in app.caption))
         self.assertNotIn('Effective numerical rank', metrics)
-        self.assertFalse(app.expander)
+        self.assertEqual(app.expander[0].label, 'What-If Market Simulator')
         app.sidebar.radio[0].set_value('Model Insights').run()
         self.assertFalse(app.exception)
         self.assertTrue(any('StandardScaler' in c.value for c in app.caption))

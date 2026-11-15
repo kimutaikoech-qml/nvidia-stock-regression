@@ -6,15 +6,30 @@ import streamlit as st
 
 GREEN = "#76B900"
 COLORS = [GREEN, "#63B3ED", "#E5BD65", "#B69AF7"]
+LOGO_PATH = Path(__file__).resolve().parents[1] / "assets" / "nvidia-logo.png"
 
 
 def apply_style():
     st.html((Path(__file__).with_name("dashboard.css")).read_text())
 
 
-def header(eyebrow, title, subtitle):
+def sidebar_logo():
+    # The asset's original black canvas provides contrast and built-in clear space.
+    with st.container(key="nvidia_sidebar_logo"):
+        st.image(str(LOGO_PATH), width=240)
+
+
+def header(eyebrow, title, subtitle, logo=False):
     st.caption(eyebrow.upper())
-    st.title(title)
+    if logo:
+        with st.container(key="nvidia_heading"):
+            mark, heading = st.columns([1, 4], vertical_alignment="center")
+            with mark:
+                st.image(str(LOGO_PATH), width=160)
+            with heading:
+                st.title(title)
+    else:
+        st.title(title)
     st.write(subtitle)
 
 

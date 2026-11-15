@@ -7,7 +7,9 @@ A machine learning project that uses **Multiple Linear Regression** to predict N
 - Interactive four-page Streamlit dashboard
 - Historical NVIDIA stock price and volume analysis
 - Technical indicators: MA5, MA20, daily returns, and volatility
-- Next-session stock price predictions
+- On-demand next-session predictions using the saved model
+- Historical prediction explorer with target-date selection and chart highlighting
+- What-if simulator with editable inputs and training-range warnings
 - Model performance evaluation and visualizations
 - Regression coefficients and residual analysis
 

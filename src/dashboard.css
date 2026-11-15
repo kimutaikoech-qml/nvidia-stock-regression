@@ -22,6 +22,22 @@ h2, h3 { letter-spacing: -0.025em; }
   padding: .65rem .8rem; border-radius: 10px; transition: background .18s;
 }
 [data-testid="stSidebar"] [role="radiogroup"] label:hover { background: #222D38; }
+.st-key-nvidia_sidebar_logo [data-testid="stImage"],
+.st-key-nvidia_heading [data-testid="stImage"] {
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  max-width: 100%;
+}
+.st-key-nvidia_sidebar_logo img,
+.st-key-nvidia_heading img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.st-key-nvidia_sidebar_logo { max-width: 240px; }
+.st-key-nvidia_heading [data-testid="stImage"] { max-width: 160px; }
 @media (max-width: 700px) {
   .block-container { padding: 1.2rem 1rem; }
   [data-testid="stMetric"] { min-height: 110px; padding: 15px; }

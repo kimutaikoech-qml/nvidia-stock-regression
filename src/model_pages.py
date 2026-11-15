@@ -7,9 +7,11 @@ import streamlit as st
 
 from src.dashboard_data import DataError
 from src.dashboard_ui import COLORS, chart, header
-from src.model_artifacts import forecast_next_session, load_artifacts
+from src.model_artifacts import load_artifacts
 from src.model_config import FEATURES
 from src.regression import coefficient_table, original_intercept
+from src.prediction_widgets import (forecast_widget, historical_widget,
+                                    prepare_interactions, simulator_widget)
 
 
 def _load():
@@ -39,7 +41,10 @@ def predictions():
         return
     m, p = bundle['metrics'], bundle['predictions']
     st.caption("🟢 Model trained")
-    _forecast(bundle)
+    interaction = prepare_interactions(bundle)
+    if interaction is not None:
+        latest, ranges = interaction
+        forecast_widget(bundle, latest)
 
     st.subheader("Model evaluation")
     scores, context = st.columns([3, 2])
@@ -52,36 +57,22 @@ def predictions():
         st.info("The test period was previously inspected during diagnostics. "
                 "The model performs similarly to the previous-close baseline.")
 
+    selected = historical_widget(p)
     st.subheader("Actual vs predicted adjusted close")
     st.caption(f"Test period · {p['Date'].min():%d %b %Y} — {p['Date'].max():%d %b %Y}")
     fig = px.line(p, x='Date', y=['Actual', 'Predicted', 'Baseline'],
                   color_discrete_sequence=COLORS,
                   labels={'Date': 'Target trading date', 'value': 'Adjusted close (USD)', 'variable': 'Series'})
     fig.update_traces(line_dash='dot', selector={'name': 'Baseline'})
+    fig.add_scatter(x=[selected.Date, selected.Date], y=[selected.Actual, selected.Predicted],
+                    mode='markers', name='Selected target',
+                    marker=dict(size=12, symbol='diamond', color=COLORS[2]),
+                    hovertemplate='%{x|%d %b %Y}<br>$%{y:.2f}<extra>Selected target</extra>')
+    fig.add_shape(type='line', x0=selected.Date, x1=selected.Date, y0=0, y1=1,
+                  xref='x', yref='paper', line=dict(color=COLORS[2], dash='dot'))
     chart(fig, 'model_test_prices', height=420)
-
-
-def _forecast(bundle):
-    st.subheader("Next-trading-session forecast")
-    try:
-        forecast = forecast_next_session(bundle['model'], bundle['features'])
-    except DataError as exc:
-        logging.getLogger(__name__).warning("Forecast unavailable: %s", exc)
-        st.warning("A forecast is unavailable for the current data.")
-        return
-    st.caption(f"LATEST COMPLETE OBSERVATION · {forecast['observation_date']:%d %b %Y}")
-    if forecast['observation_date'] != forecast['dataset_latest_date']:
-        st.warning("The most recent dataset rows have incomplete features. The estimate uses the last complete "
-                   "observation and refers to the session after that observation.")
-    cols = st.columns(4)
-    cols[0].metric("Observation adjusted close", f"${forecast['latest_close']:,.2f}")
-    cols[1].metric("Estimated next-session close", f"${forecast['predicted_close']:,.2f}")
-    cols[2].metric("Estimated dollar change", f"${forecast['dollar_change']:+,.2f}")
-    cols[3].metric("Estimated percentage change", f"{forecast['percent_change']:+.2f}%")
-    st.caption(f"Estimate for the first trading session after {forecast['observation_date']:%d %b %Y} "
-               "· historical snapshot · not a guaranteed price.")
-    if forecast['predicted_close'] <= 0:
-        st.warning("The unconstrained regression returned a non-positive price estimate; it is not economically meaningful.")
+    if interaction is not None:
+        simulator_widget(bundle, latest, ranges)
 
 
 def insights():
