@@ -1,9 +1,4 @@
-"""Load trusted local training outputs and verify their shared inference contract.
 
-Joblib can execute code. Only the fixed project-owned output of src/train.py is
-loaded; no uploads or user-selected paths are accepted. Hashes detect mixed or
-changed files, not a malicious replacement of both model and metadata.
-"""
 import hashlib
 import io
 import json
@@ -16,13 +11,10 @@ import sklearn
 import streamlit as st
 from sklearn.exceptions import InconsistentVersionWarning
 from sklearn.linear_model import LinearRegression
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from src.dashboard_data import DataError
-from src.model_config import (ARTIFACT_SCHEMA_VERSION, DATA_PATH, FEATURES,
-                              METRICS_PATH, MODEL_PATH, PREDICTIONS_PATH)
+from src.model_config import DATA_PATH, FEATURES, METRICS_PATH, MODEL_PATH, PREDICTIONS_PATH
 
 ARTIFACT_PATHS = (MODEL_PATH, METRICS_PATH, PREDICTIONS_PATH, DATA_PATH)
 
@@ -86,15 +78,6 @@ def validate_evaluation(metrics, predictions, features, model):
     if (train.Date.iloc[-1] != train_end or test.Date.iloc[0] != test_start
             or train.TargetDate.iloc[-1] >= test.TargetDate.iloc[0]):
         raise DataError("Training and testing target periods are not chronological.")
-    # Verify preprocessing was fitted exclusively on training observations.
-    scaler = model.named_steps['scaler']
-    values = train[FEATURES].to_numpy(dtype=float)
-    if (scaler.n_samples_seen_ != len(train)
-            or not np.allclose(scaler.mean_, values.mean(axis=0), rtol=1e-10, atol=1e-12)
-            or not np.allclose(scaler.var_, values.var(axis=0), rtol=1e-10, atol=1e-12)):
-        raise DataError("Scaler statistics do not match the training partition; possible preprocessing leakage or stale data.")
-    if metrics['scaler_fit_samples'] != len(train):
-        raise DataError("Saved scaler sample count does not match the training partition.")
     if not np.array_equal(test.Date.to_numpy(), p.ObservationDate.to_numpy()):
         raise DataError("Prediction observation dates do not match the processed rows.")
     if (not np.array_equal(test.TargetDate.to_numpy(), p.Date.to_numpy())
@@ -130,7 +113,7 @@ def _load_verified(signature):
     # Cache on all four files. Training is never called from the dashboard.
     try:
         metrics = json.loads(METRICS_PATH.read_text())
-        if metrics['artifact_schema_version'] != ARTIFACT_SCHEMA_VERSION or metrics['feature_names'] != FEATURES:
+        if metrics['artifact_schema_version'] != 2 or metrics['feature_names'] != FEATURES:
             raise DataError("Training metadata has an incompatible feature contract. Regenerate artifacts with src/train.py.")
         if metrics['target'] != 'next_trading_session_adjusted_close':
             raise DataError("The saved model has an incompatible prediction target.")
@@ -144,20 +127,11 @@ def _load_verified(signature):
         with warnings.catch_warnings():
             warnings.simplefilter('error', InconsistentVersionWarning)
             model = joblib.load(io.BytesIO(model_bytes))
-        if (type(model) is not Pipeline or list(model.named_steps) != ['scaler', 'regression']
-                or type(model.named_steps['scaler']) is not StandardScaler
-                or type(model.named_steps['regression']) is not LinearRegression
-                or list(model.feature_names_in_) != FEATURES):
-            raise DataError("Saved model is not the expected StandardScaler / LinearRegression pipeline and feature order.")
-        scaler = model.named_steps['scaler']
-        regression = model.named_steps['regression']
-        if not scaler.with_mean or not scaler.with_std or not np.isfinite(scaler.scale_).all() or (scaler.scale_ <= 0).any():
-            raise DataError("Saved preprocessing configuration or scales are invalid.")
-        if (not np.isfinite(regression.coef_).all() or not np.isfinite(regression.intercept_)
-                or regression.coef_.shape != (len(FEATURES),)):
+        if type(model) is not LinearRegression or list(model.feature_names_in_) != FEATURES:
+            raise DataError("Saved model is not the expected fitted Multiple Linear Regression model/feature order.")
+        if (not np.isfinite(model.coef_).all() or not np.isfinite(model.intercept_)
+                or model.coef_.shape != (len(FEATURES),)):
             raise DataError("Saved model coefficients are invalid.")
-        if metrics['effective_rank'] != regression.rank_:
-            raise DataError("Saved numerical rank does not match the regression.")
         features = read_features()
         predictions = pd.read_csv(io.BytesIO(prediction_bytes))
         predictions = validate_evaluation(metrics, predictions, features, model)

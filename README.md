@@ -70,3 +70,7 @@ python src/train.py
 ```bash
 python -m unittest discover -s tests -v
 ```
+## 🚀 Live Demo
+
+Try the interactive Streamlit application here:
+## nvidia-prediction.streamlit.app
